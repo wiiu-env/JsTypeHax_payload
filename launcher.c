@@ -115,19 +115,19 @@ static void thread_callback(int argc, void *argv) {
     // Register it as syscall 0x09
     unsigned int setIBAT0Addr = 0xFFF02344;
     unsigned int curAddr = setIBAT0Addr;
-    KernelWriteU32FixAddr(curAddr, 0x7C0006AC,&private_data); // eieio
+    KernelWriteU32FixedAddr(curAddr, 0x7C0006AC,&private_data);
     curAddr+=4;
-    KernelWriteU32FixAddr(curAddr, 0x4C00012C,&private_data); // isync
+    KernelWriteU32FixedAddr(curAddr, 0x4C00012C,&private_data);
     curAddr+=4;
-    KernelWriteU32FixAddr(curAddr, 0x7C7083A6,&private_data); // mtibatu %3,0
+    KernelWriteU32FixedAddr(curAddr, 0x7C7083A6,&private_data);
     curAddr+=4;
-    KernelWriteU32FixAddr(curAddr, 0x7C9183A6,&private_data); // mtibatl %3,0
+    KernelWriteU32FixedAddr(curAddr, 0x7C9183A6,&private_data);
     curAddr+=4;
-    KernelWriteU32FixAddr(curAddr, 0x7C0006AC,&private_data); // eieio
+    KernelWriteU32FixedAddr(curAddr, 0x7C0006AC,&private_data);
     curAddr+=4;
-    KernelWriteU32FixAddr(curAddr, 0x4C00012C,&private_data); // isync
+    KernelWriteU32FixedAddr(curAddr, 0x4C00012C,&private_data);
     curAddr+=4;
-    KernelWriteU32FixAddr(curAddr, 0x4E800020,&private_data); // blr
+    KernelWriteU32FixedAddr(curAddr, 0x4E800020,&private_data);
     curAddr+=4;
 
     // Setup as syscall 0x09
