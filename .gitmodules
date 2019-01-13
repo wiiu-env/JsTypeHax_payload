@@ -1,0 +1,3 @@
+[submodule "main_hook"]
+	path = main_hook
+	url = https://github.com/wiiu-env/payload_loader
