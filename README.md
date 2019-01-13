@@ -18,7 +18,7 @@ temporarily. Then disabling the memory translation, make sure to use physical ad
 `OSEffectiveToPhysical` might help there.
 
 ## Building
-Place the a project with Makefile into a subfolder `/main_hook` that creates a `mainhook.elf`.
+Place the a project with Makefile into a subfolder `/main_hook` that creates a `main_hook.elf`.
 Using a `.elf` directly requires changes on the Makefile. This repository provides
 a generic `.elf` as submodule, see it's README for detailed information and usage.
 
