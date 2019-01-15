@@ -1,6 +1,8 @@
 # JsTypeHax payload
 This is an example payload for the [JsTypeHax](https://github.com/wiiu-env/JsTypeHax).
 It simply copies a given statically linked payload (`main_hook/main_hook.elf`)
+into memory and installs a "main hook" to jump to this every time a application
+starts.
 
 ## Usage
 This payload meant to be used with [JsTypeHax](https://github.com/wiiu-env/JsTypeHax),
