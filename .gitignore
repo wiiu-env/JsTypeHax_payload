@@ -3,3 +3,4 @@ bin/
 code550.bin
 *.cbp
 main_hook.h
+*.layout
