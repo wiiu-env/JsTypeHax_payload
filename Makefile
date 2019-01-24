@@ -30,8 +30,8 @@ main550:
 
 main: main_hook.h
 	$(CC) $(CFLAGS) -DVER=$(FIRMWARE) -c $(project)/launcher.c
-	$(CC) $(CFLAGS) -DVER=$(FIRMWARE) -c $(project)/kexploit.c
-	$(AS) $(ASFLAGS) -DVER=$(FIRMWARE) -c $(project)/syscalls.S
+	$(CC) $(CFLAGS) -DVER=$(FIRMWARE) -c $(project)/gx2sploit/kexploit.c
+	$(AS) $(ASFLAGS) -DVER=$(FIRMWARE) -c $(project)/gx2sploit/syscalls.S
 	$(AS) $(ASFLAGS) -DVER=$(FIRMWARE) -c $(project)/crt0.S
 	cp -r $(root)/*.o $(build)
 	rm $(root)/*.o

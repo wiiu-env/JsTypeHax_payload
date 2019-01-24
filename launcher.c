@@ -1,6 +1,6 @@
 #include "os_types.h"
 #include "elf_abi.h"
-#include "kexploit.h"
+#include "gx2sploit/kexploit.h"
 #include "structs.h"
 #include "main_hook.h"
 #include "common.h"
@@ -8,6 +8,7 @@
 /* Install functions */
 static void InstallMain(private_data_t *private_data);
 static void thread_callback(int argc, void *argv);
+void doBrowserShutdown(unsigned int coreinit_handle);
 
 /* ****************************************************************** */
 /*                               ENTRY POINT                          */
@@ -97,7 +98,7 @@ static void thread_callback(int argc, void *argv) {
     OSDynLoad_FindExport(coreinit_handle, 0, "OSEffectiveToPhysical", &private_data.OSEffectiveToPhysical);
 
     doBrowserShutdown(private_data.coreinit_handle);
-    run_kexploit(&private_data);
+    run_kexploit(coreinit_handle);
 
     InstallMain(&private_data);
 
@@ -109,25 +110,25 @@ static void thread_callback(int argc, void *argv) {
     unsigned int jump_addr = mainEntryPoint & 0x03fffffc;
 
     unsigned int bufferU32 = 0x48000003 | jump_addr;
-    KernelWriteU32(repl_addr,bufferU32,&private_data);
+    KernelWriteU32(repl_addr,bufferU32,coreinit_handle);
 
     // Place a function to set the IBAT0 inside free kernel space.
     // Register it as syscall 0x09
     unsigned int setIBAT0Addr = 0xFFF02344;
     unsigned int curAddr = setIBAT0Addr;
-    KernelWriteU32FixedAddr(curAddr, 0x7C0006AC,&private_data);
+    KernelWriteU32FixedAddr(curAddr, 0x7C0006AC,coreinit_handle);
     curAddr+=4;
-    KernelWriteU32FixedAddr(curAddr, 0x4C00012C,&private_data);
+    KernelWriteU32FixedAddr(curAddr, 0x4C00012C,coreinit_handle);
     curAddr+=4;
-    KernelWriteU32FixedAddr(curAddr, 0x7C7083A6,&private_data);
+    KernelWriteU32FixedAddr(curAddr, 0x7C7083A6,coreinit_handle);
     curAddr+=4;
-    KernelWriteU32FixedAddr(curAddr, 0x7C9183A6,&private_data);
+    KernelWriteU32FixedAddr(curAddr, 0x7C9183A6,coreinit_handle);
     curAddr+=4;
-    KernelWriteU32FixedAddr(curAddr, 0x7C0006AC,&private_data);
+    KernelWriteU32FixedAddr(curAddr, 0x7C0006AC,coreinit_handle);
     curAddr+=4;
-    KernelWriteU32FixedAddr(curAddr, 0x4C00012C,&private_data);
+    KernelWriteU32FixedAddr(curAddr, 0x4C00012C,coreinit_handle);
     curAddr+=4;
-    KernelWriteU32FixedAddr(curAddr, 0x4E800020,&private_data);
+    KernelWriteU32FixedAddr(curAddr, 0x4E800020,coreinit_handle);
     curAddr+=4;
 
     // Setup as syscall 0x09
@@ -146,6 +147,44 @@ static void thread_callback(int argc, void *argv) {
     _SYSLaunchMiiStudio();
 
     _Exit(0);
+}
+
+void wait(unsigned int coreinit_handle, unsigned int t) {
+    void (*OSYieldThread)(void);
+    OSDynLoad_FindExport(coreinit_handle, 0, "OSYieldThread", &OSYieldThread);
+
+    while(t--) {
+        OSYieldThread();
+    }
+}
+
+void doBrowserShutdown(unsigned int coreinit_handle) {
+    void*(*memset)(void *dest, uint32_t value, uint32_t bytes);
+    void*(*OSAllocFromSystem)(uint32_t size, int align);
+    void (*OSFreeToSystem)(void *ptr);
+
+    int(*IM_SetDeviceState)(int fd, void *mem, int state, int a, int b);
+    int(*IM_Close)(int fd);
+    int(*IM_Open)();
+
+    OSDynLoad_FindExport(coreinit_handle, 0, "memset", &memset);
+    OSDynLoad_FindExport(coreinit_handle, 0, "OSAllocFromSystem", &OSAllocFromSystem);
+    OSDynLoad_FindExport(coreinit_handle, 0, "OSFreeToSystem", &OSFreeToSystem);
+
+    OSDynLoad_FindExport(coreinit_handle, 0, "IM_SetDeviceState", &IM_SetDeviceState);
+    OSDynLoad_FindExport(coreinit_handle, 0, "IM_Close", &IM_Close);
+    OSDynLoad_FindExport(coreinit_handle, 0, "IM_Open", &IM_Open);
+
+    //Restart system to get lib access
+    int fd = IM_Open();
+    void *mem = OSAllocFromSystem(0x100, 64);
+    memset(mem, 0, 0x100);
+    //set restart flag to force quit browser
+    IM_SetDeviceState(fd, mem, 3, 0, 0);
+    IM_Close(fd);
+    OSFreeToSystem(mem);
+    //wait a bit for browser end
+    wait(coreinit_handle, 0x3FFFF*0x4);
 }
 
 static int strcmp(const char *s1, const char *s2) {
@@ -203,7 +242,7 @@ static void InstallMain(private_data_t *private_data) {
     unsigned char *main_text = private_data->data_elf + section_offset;
     /* Copy main .text to memory */
     if(section_offset > 0) {
-        KernelWrite((main_text_addr), (void *)main_text, main_text_len, private_data);
+        KernelWrite((main_text_addr), (void *)main_text, main_text_len, private_data->coreinit_handle);
     }
 
     // get the .rodata section
@@ -213,7 +252,7 @@ static void InstallMain(private_data_t *private_data) {
     if(section_offset > 0) {
         unsigned char *main_rodata = private_data->data_elf + section_offset;
         /* Copy main rodata to memory */
-        KernelWrite((main_rodata_addr), (void *)main_rodata, main_rodata_len, private_data);
+        KernelWrite((main_rodata_addr), (void *)main_rodata, main_rodata_len, private_data->coreinit_handle);
     }
 
     // get the .data section
@@ -223,7 +262,7 @@ static void InstallMain(private_data_t *private_data) {
     if(section_offset > 0) {
         unsigned char *main_data = private_data->data_elf + section_offset;
         /* Copy main data to memory */
-        KernelWrite((main_data_addr), (void *)main_data, main_data_len, private_data);
+        KernelWrite((main_data_addr), (void *)main_data, main_data_len, private_data->coreinit_handle);
     }
 
     // get the .bss section
@@ -233,7 +272,7 @@ static void InstallMain(private_data_t *private_data) {
     if(section_offset > 0) {
         unsigned char *main_bss = private_data->data_elf + section_offset;
         /* Copy main data to memory */
-        KernelWrite((main_bss_addr), (void *)main_bss, main_bss_len, private_data);
+        KernelWrite((main_bss_addr), (void *)main_bss, main_bss_len, private_data->coreinit_handle);
     }
 
 }
