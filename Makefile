@@ -1,3 +1,5 @@
+include $(DEVKITPPC)/base_tools
+
 PATH := $(DEVKITPPC)/bin:$(PATH)
 PREFIX ?= powerpc-eabi-
 CC = $(PREFIX)gcc
@@ -12,14 +14,14 @@ project	:=	.
 root	:=	$(CURDIR)
 build	:=  $(root)/bin
 
-sd_loader_elf := main_hook/main_hook.elf
+main_hook_elf := main_hook/main_hook.elf
 
 all: clean setup main550
 
-main_hook.h: $(sd_loader_elf)
-	xxd -i $< | sed "s/unsigned/static const unsigned/g;s/loader/loader/g;s/build_//g" > $@
-
-$(sd_loader_elf):
+main_hook_elf.bin: $(main_hook_elf)
+	@$(bin2o)
+    
+$(main_hook_elf):
 	make -C main_hook
 	
 setup:
@@ -28,7 +30,7 @@ setup:
 main550:
 	make main FIRMWARE=550
 
-main: main_hook.h
+main: main_hook_elf.bin
 	$(CC) $(CFLAGS) -DVER=$(FIRMWARE) -c $(project)/launcher.c
 	$(CC) $(CFLAGS) -DVER=$(FIRMWARE) -c $(project)/gx2sploit/kexploit.c
 	$(AS) $(ASFLAGS) -DVER=$(FIRMWARE) -c $(project)/gx2sploit/syscalls.S
@@ -40,6 +42,6 @@ main: main_hook.h
 
 clean:
 	rm -rf $(build)
-	rm -rf main_hook.h
-	rm -rf code550.h   
+	rm -rf code550.h
+	rm -rf main_hook_elf.h
 	make clean -C main_hook
