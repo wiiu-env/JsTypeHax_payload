@@ -2,7 +2,7 @@
 #include "elf_abi.h"
 #include "gx2sploit/kexploit.h"
 #include "structs.h"
-#include "main_hook.h"
+#include "main_hook_elf.h"
 #include "common.h"
 
 /* Install functions */
@@ -84,7 +84,7 @@ static void thread_callback(int argc, void *argv) {
 
     private_data.coreinit_handle = coreinit_handle;
     private_data.memset = p_memset;
-    private_data.data_elf = (unsigned char *) main_hook_main_hook_elf; // use this address as temporary to load the elf
+    private_data.data_elf = (unsigned char *) main_hook_elf; // use this address as temporary to load the elf
 
     OSDynLoad_FindExport(coreinit_handle, 1, "MEMAllocFromDefaultHeapEx", &functionPointer);
     private_data.MEMAllocFromDefaultHeapEx = (void*(*)(unsigned int, unsigned int))*functionPointer;
